@@ -59,14 +59,14 @@ export default function InterviewSessionPage() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          jobType,
-          companyType: industry,
+          jobType: industry,
+          jobLevel: jobType,
           previousQA: [],
         }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "質問の取得に失敗しました");
-      setCurrentQuestion(data.question);
+      setCurrentQuestion(data.question ?? "");
       setPreviousQA([]);
       setStep("interview");
       setAnswer("");
@@ -84,15 +84,17 @@ export default function InterviewSessionPage() {
     setError(null);
     setSubmitLoading(true);
     try {
+      const questionIndex = previousQA.length + 1;
       const res = await fetch("/api/interview/answer", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          question: currentQuestion,
           answer: answer.trim(),
-          jobType,
-          companyType: industry,
+          questionIndex,
+          jobType: industry,
+          jobLevel: jobType,
           previousQA: previousQA,
+          question: currentQuestion,
         }),
       });
       const data = await res.json();
@@ -103,13 +105,13 @@ export default function InterviewSessionPage() {
         {
           question: currentQuestion,
           answer: answer.trim(),
-          score: data.score,
-          feedback: data.feedback,
+          score: data.score ?? 0,
+          feedback: data.feedback ?? "",
         },
       ];
       setPreviousQA(newQA);
-      setLastScore(data.score);
-      setLastFeedback(data.feedback);
+      setLastScore(data.score ?? null);
+      setLastFeedback(data.feedback ?? null);
 
       if (data.finished && data.finalFeedback) {
         setFinalFeedback(data.finalFeedback);
@@ -132,8 +134,8 @@ export default function InterviewSessionPage() {
         } catch {
           // ignore
         }
-      } else if (data.nextQuestion) {
-        setCurrentQuestion(data.nextQuestion);
+      } else {
+        setCurrentQuestion(data.question ?? "");
         setAnswer("");
       }
     } catch (e) {

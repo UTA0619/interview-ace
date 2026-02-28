@@ -12,16 +12,128 @@ const TOTAL_QUESTIONS = 5;
 const FALLBACK_QUESTION =
   "本日はよろしくお願いします。まず、自己紹介をお願いできますか。";
 
-/** 次の質問を取得（answer がない場合）。必ず { question: string } の JSON で返す。 */
-async function handleGetQuestion(
-  jobType: string,
-  companyType: string,
-  previousQA: QAPair[] = []
-): Promise<NextResponse> {
+/** 回答送信用リクエストボディ */
+type AnswerRequestBody = {
+  answer: string;
+  questionIndex: number;
+  jobType: string;
+  jobLevel: string;
+  previousQA: Array<{ question: string; answer: string; score?: number; feedback?: string }>;
+  /** 現在回答している質問文（previousQA に含めない場合は必須） */
+  question?: string;
+};
+
+/** 回答送信のレスポンス: 次の質問・フィードバック・スコア（5問目時は finalFeedback, finished も） */
+type AnswerResponse = {
+  question: string;
+  feedback: string;
+  score: number;
+  finalFeedback?: string;
+  finished?: boolean;
+};
+
+function parseBody(raw: string): AnswerRequestBody | null {
+  try {
+    if (!raw?.trim()) return null;
+    const body = JSON.parse(raw) as Record<string, unknown>;
+    if (typeof body.answer !== "string") return null;
+    if (typeof body.questionIndex !== "number") return null;
+    if (typeof body.jobType !== "string") return null;
+    if (typeof body.jobLevel !== "string") return null;
+    const previousQA = Array.isArray(body.previousQA) ? body.previousQA : [];
+    return {
+      answer: body.answer,
+      questionIndex: body.questionIndex,
+      jobType: body.jobType,
+      jobLevel: body.jobLevel,
+      previousQA,
+      question: typeof body.question === "string" ? body.question : undefined,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** 回答を評価し、次の質問を生成して { question, feedback, score } で返す */
+async function handleSubmitAnswer(body: AnswerRequestBody): Promise<NextResponse<AnswerResponse | { error: string }>> {
+  const { answer, questionIndex, jobType, jobLevel, previousQA } = body;
+
+  const currentQuestion =
+    body.question?.trim() ||
+    previousQA[questionIndex - 1]?.question?.trim() ||
+    previousQA[previousQA.length - 1]?.question?.trim();
+
+  if (!currentQuestion) {
+    return NextResponse.json(
+      { error: "評価するための質問がありません。リクエストに question を含めるか、previousQA に現在の質問を入れてください。" },
+      { status: 400 }
+    );
+  }
+
+  const normalizedQA: QAPair[] = previousQA.map((qa) => ({
+    question: String(qa.question),
+    answer: String(qa.answer),
+    score: qa.score,
+    feedback: qa.feedback,
+  }));
+
+  let score: number;
+  let feedback: string;
+
+  try {
+    const result = await evaluateAnswer(currentQuestion, answer.trim(), jobLevel);
+    score = result.score;
+    feedback = result.feedback;
+  } catch (e) {
+    console.error("[api/interview/answer] evaluateAnswer:", e);
+    return NextResponse.json(
+      { error: "回答の評価に失敗しました。しばらくしてから再試行してください。" },
+      { status: 500 }
+    );
+  }
+
+  const completedQA: QAPair[] = [
+    ...normalizedQA,
+    { question: currentQuestion, answer: answer.trim(), score, feedback },
+  ];
+
+  let nextQuestion: string;
   try {
     const result = await generateInterviewQuestion(
+      jobLevel,
       jobType,
-      companyType,
+      DIFFICULTY,
+      completedQA
+    );
+    nextQuestion = result.question?.trim() || FALLBACK_QUESTION;
+  } catch (e) {
+    console.error("[api/interview/answer] generateInterviewQuestion:", e);
+    nextQuestion = FALLBACK_QUESTION;
+  }
+
+  const payload: AnswerResponse = { question: nextQuestion, feedback, score };
+  if (completedQA.length >= TOTAL_QUESTIONS) {
+    try {
+      const { feedback: finalFb } = await generateFinalFeedback(completedQA);
+      payload.finalFeedback = finalFb;
+      payload.finished = true;
+    } catch (e) {
+      console.error("[api/interview/answer] generateFinalFeedback:", e);
+    }
+  }
+  return NextResponse.json(payload);
+}
+
+/** 最初の質問を取得（answer なし・質問のみ欲しい場合） */
+async function handleGetQuestion(
+  jobType: string,
+  jobLevel: string,
+  previousQA: QAPair[] = []
+): Promise<NextResponse<{ question: string } | { error: string; question: string }>> {
+  try {
+    const result = await generateInterviewQuestion(
+      jobLevel,
+      jobType,
       DIFFICULTY,
       previousQA
     );
@@ -30,107 +142,70 @@ async function handleGetQuestion(
   } catch (e) {
     console.error("[api/interview/answer] handleGetQuestion:", e);
     return NextResponse.json(
-      { question: FALLBACK_QUESTION, error: "質問の生成に失敗しました" },
+      { error: "質問の生成に失敗しました", question: FALLBACK_QUESTION },
       { status: 200 }
     );
   }
 }
 
-/** 回答を送信し、評価と次問 or 総評を返す */
-async function handleSubmitAnswer(
-  question: string,
-  answer: string,
-  jobType: string,
-  companyType: string,
-  previousQA: QAPair[]
-) {
-  const { score, feedback } = await evaluateAnswer(question, answer, jobType);
-  const currentQA: QAPair = { question, answer, score, feedback };
-  const allQA: QAPair[] = [...previousQA, currentQA];
-
-  if (allQA.length >= TOTAL_QUESTIONS) {
-    const { feedback: finalFeedback } = await generateFinalFeedback(allQA);
-    return NextResponse.json({
-      score,
-      feedback,
-      finalFeedback,
-      finished: true,
-      allQA,
-    });
+/** 質問取得用の簡易パース（answer なしのとき） */
+function parseGetQuestionBody(raw: string): { jobType: string; jobLevel: string; previousQA: QAPair[] } | null {
+  try {
+    if (!raw?.trim()) return null;
+    const body = JSON.parse(raw) as Record<string, unknown>;
+    const jobType = body.jobType ?? body.companyType;
+    const jobLevel = body.jobLevel ?? body.jobType ?? body.companyType;
+    if (typeof jobType !== "string" || typeof jobLevel !== "string") return null;
+    const prev = body.previousQA;
+    const previousQA = Array.isArray(prev)
+      ? (prev as QAPair[]).map((qa) => ({
+          question: String(qa.question),
+          answer: String(qa.answer),
+          score: qa.score,
+          feedback: qa.feedback,
+        }))
+      : [];
+    return { jobType, jobLevel, previousQA };
+  } catch {
+    return null;
   }
-
-  const { question: nextQuestion } = await generateInterviewQuestion(
-    jobType,
-    companyType,
-    DIFFICULTY,
-    allQA
-  );
-
-  return NextResponse.json({
-    score,
-    feedback,
-    nextQuestion: nextQuestion?.trim() || FALLBACK_QUESTION,
-    finished: false,
-    allQA,
-  });
 }
 
 export async function POST(request: NextRequest) {
-  let body: Record<string, unknown> = {};
+  let raw: string;
   try {
-    const raw = await request.text();
-    if (raw && raw.trim()) {
-      body = JSON.parse(raw) as Record<string, unknown>;
-    }
-  } catch {
+    raw = await request.text();
+  } catch (e) {
+    console.error("[api/interview/answer] request.text:", e);
     return NextResponse.json(
-      { error: "リクエストボディが不正です", question: FALLBACK_QUESTION },
-      { status: 400 }
+      { error: "リクエストの読み取りに失敗しました" },
+      { status: 500 }
     );
   }
 
-  const {
-    question,
-    answer,
-    jobType,
-    companyType,
-    previousQA = [],
-  } = body as {
-    question?: string;
-    answer?: string;
-    jobType?: string;
-    companyType?: string;
-    previousQA?: QAPair[];
-  };
+  const answerBody = parseBody(raw);
 
-  if (!jobType || !companyType) {
-    return NextResponse.json(
-      { error: "jobType と companyType は必須です", question: FALLBACK_QUESTION },
-      { status: 400 }
-    );
-  }
-
-  if (answer !== undefined && answer !== null && question) {
-    try {
-      return await handleSubmitAnswer(
-        String(question),
-        String(answer),
-        String(jobType),
-        String(companyType),
-        Array.isArray(previousQA) ? previousQA : []
-      );
-    } catch (e) {
-      console.error("[api/interview/answer] handleSubmitAnswer:", e);
+  if (answerBody && String(answerBody.answer ?? "").trim() !== "") {
+    if (!answerBody.jobType?.trim() || !answerBody.jobLevel?.trim()) {
       return NextResponse.json(
-        { error: "処理に失敗しました", question: FALLBACK_QUESTION },
-        { status: 500 }
+        { error: "jobType と jobLevel は必須です。" },
+        { status: 400 }
       );
     }
+    return handleSubmitAnswer(answerBody);
   }
 
-  return handleGetQuestion(
-    String(jobType),
-    String(companyType),
-    Array.isArray(previousQA) ? previousQA : []
+  const getQuestionBody = parseGetQuestionBody(raw);
+  if (getQuestionBody) {
+    return handleGetQuestion(
+      getQuestionBody.jobType,
+      getQuestionBody.jobLevel,
+      getQuestionBody.previousQA
+    );
+  }
+
+  return NextResponse.json(
+    { error: "リクエストボディが不正です。回答送信時は answer, questionIndex, jobType, jobLevel, previousQA を送信してください。" },
+    { status: 400 }
   );
 }
