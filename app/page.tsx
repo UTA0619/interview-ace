@@ -12,7 +12,7 @@ export default function HomePage() {
         </p>
         <div className="flex flex-col sm:flex-row gap-4 justify-center">
           <Link
-            href="/interview/session"
+            href="/login"
             className="inline-flex items-center justify-center rounded-xl bg-zinc-800 text-white font-medium h-12 px-6 hover:bg-zinc-700 transition-colors"
           >
             面接を始める
