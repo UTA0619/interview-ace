@@ -1,0 +1,252 @@
+:root {
+  --bg: #f5f0e8;
+  --surface: #fffef9;
+  --text: #2c2825;
+  --text-muted: #6b6560;
+  --accent: #c17f59;
+  --accent-hover: #a86a47;
+  --border: #e5dfd6;
+  --completed: #8a9b7a;
+  --shadow: 0 2px 12px rgba(44, 40, 37, 0.06);
+  --radius: 12px;
+  --font: "Zen Kaku Gothic New", sans-serif;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+.app {
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.title {
+  font-size: 1.75rem;
+  font-weight: 700;
+  margin: 0 0 0.25rem;
+  letter-spacing: 0.02em;
+}
+
+.subtitle {
+  font-size: 0.9rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+.main {
+  background: var(--surface);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+}
+
+.add-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+}
+
+.add-input {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-family: var(--font);
+  font-size: 1rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.add-input::placeholder {
+  color: var(--text-muted);
+}
+
+.add-input:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(193, 127, 89, 0.15);
+}
+
+.add-btn {
+  padding: 0.75rem 1.25rem;
+  font-family: var(--font);
+  font-size: 0.95rem;
+  font-weight: 500;
+  color: #fff;
+  background: var(--accent);
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+  white-space: nowrap;
+}
+
+.add-btn:hover {
+  background: var(--accent-hover);
+}
+
+.add-btn:active {
+  transform: scale(0.98);
+}
+
+.filters {
+  display: flex;
+  gap: 0.25rem;
+  margin-bottom: 1rem;
+}
+
+.filter-btn {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  font-family: var(--font);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.filter-btn:hover {
+  color: var(--text);
+  background: rgba(44, 40, 37, 0.05);
+}
+
+.filter-btn.active {
+  color: var(--accent);
+  font-weight: 500;
+  background: rgba(193, 127, 89, 0.12);
+}
+
+.todo-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 0.75rem;
+  border-radius: 8px;
+  margin-bottom: 0.35rem;
+  transition: background 0.2s;
+}
+
+.todo-item:hover {
+  background: rgba(44, 40, 37, 0.03);
+}
+
+.todo-item.completed .todo-text {
+  text-decoration: line-through;
+  color: var(--text-muted);
+}
+
+.todo-checkbox {
+  width: 20px;
+  height: 20px;
+  margin: 0;
+  accent-color: var(--completed);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.todo-text {
+  flex: 1;
+  font-size: 1rem;
+  word-break: break-word;
+}
+
+.todo-delete {
+  padding: 0.35rem 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  opacity: 0.7;
+  transition: color 0.2s, background 0.2s, opacity 0.2s;
+  flex-shrink: 0;
+}
+
+.todo-delete:hover {
+  color: #c45c5c;
+  background: rgba(196, 92, 92, 0.1);
+  opacity: 1;
+}
+
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.count {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.clear-btn {
+  padding: 0.4rem 0.75rem;
+  font-family: var(--font);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: color 0.2s, background 0.2s;
+}
+
+.clear-btn:hover {
+  color: var(--text);
+  background: rgba(44, 40, 37, 0.06);
+}
+
+.empty-message {
+  text-align: center;
+  padding: 2rem 1rem;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+
+@media (max-width: 480px) {
+  .app {
+    padding: 1.25rem 1rem 2rem;
+  }
+
+  .add-form {
+    flex-direction: column;
+  }
+
+  .add-btn {
+    width: 100%;
+  }
+}

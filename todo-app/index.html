@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Todo リスト</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="title">Todo リスト</h1>
+      <p class="subtitle">やることを書き出して、ひとつずつ片付けよう</p>
+    </header>
+
+    <main class="main">
+      <form class="add-form" id="addForm" autocomplete="off">
+        <input
+          type="text"
+          class="add-input"
+          id="addInput"
+          placeholder="新しいタスクを入力..."
+          maxlength="200"
+          required
+        >
+        <button type="submit" class="add-btn" aria-label="追加">追加</button>
+      </form>
+
+      <div class="filters" role="tablist">
+        <button type="button" class="filter-btn active" data-filter="all" aria-pressed="true">すべて</button>
+        <button type="button" class="filter-btn" data-filter="active" aria-pressed="false">未完了</button>
+        <button type="button" class="filter-btn" data-filter="completed" aria-pressed="false">完了</button>
+      </div>
+
+      <ul class="todo-list" id="todoList" aria-label="タスク一覧">
+        <!-- ここにTodoが動的に追加される -->
+      </ul>
+
+      <div class="footer" id="footer">
+        <span class="count" id="count">0 件のタスク</span>
+        <button type="button" class="clear-btn" id="clearCompleted" style="display: none;">完了を削除</button>
+      </div>
+    </main>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

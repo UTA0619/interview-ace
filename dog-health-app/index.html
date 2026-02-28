@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>わんこ健康ノート｜小型犬の健康管理</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@400;500;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1 class="logo">🐕 わんこ健康ノート</h1>
+      <p class="tagline">小型犬の健康状態をいつでも管理</p>
+    </header>
+
+    <!-- 犬種別標準体重（常時表示） -->
+    <aside class="standard-weight-box" id="standard-weight-box" aria-label="標準体重">
+      <h2 class="standard-weight-title">📊 標準体重（犬種別）</h2>
+      <div id="standard-weight-content" class="standard-weight-content"></div>
+      <div id="weight-alert" class="weight-alert hidden" role="alert"></div>
+    </aside>
+
+    <!-- お知らせ（予約・予防接種リマインダー） -->
+    <section class="announcements" id="announcements" aria-live="polite"></section>
+
+    <nav class="tabs">
+      <button class="tab active" data-tab="profile">プロフィール</button>
+      <button class="tab" data-tab="weight">体重記録</button>
+      <button class="tab" data-tab="vaccine">予防接種</button>
+      <button class="tab" data-tab="vet">病院記録</button>
+      <button class="tab" data-tab="medicine">お薬</button>
+    </nav>
+
+    <main class="content">
+      <!-- プロフィール -->
+      <section id="profile" class="panel active">
+        <h2>愛犬プロフィール</h2>
+        <form id="profile-form" class="card form-card">
+          <div class="form-group">
+            <label for="dog-name">名前</label>
+            <input type="text" id="dog-name" placeholder="例：ポチ" required>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
+              <label for="dog-breed">犬種</label>
+              <input type="text" id="dog-breed" placeholder="例：トイプードル">
+            </div>
+            <div class="form-group">
+              <label for="dog-birth">生年月日</label>
+              <input type="date" id="dog-birth">
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="dog-weight">現在の体重 (kg)</label>
+            <input type="number" id="dog-weight" step="0.1" min="0" placeholder="例：3.5">
+          </div>
+          <div class="form-group">
+            <label for="dog-notes">メモ</label>
+            <textarea id="dog-notes" rows="3" placeholder="アレルギー、持病など"></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary">保存する</button>
+        </form>
+      </section>
+
+      <!-- 体重記録 -->
+      <section id="weight" class="panel">
+        <h2>体重記録</h2>
+        <div class="card">
+          <form id="weight-form" class="weight-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="weight-value">体重 (kg)</label>
+                <input type="number" id="weight-value" step="0.1" min="0" required>
+              </div>
+              <div class="form-group">
+                <label for="weight-date">日付</label>
+                <input type="date" id="weight-date" required>
+              </div>
+            </div>
+            <button type="submit" class="btn btn-primary">記録を追加</button>
+          </form>
+        </div>
+        <div class="card">
+          <h3>記録一覧</h3>
+          <ul id="weight-list" class="record-list"></ul>
+        </div>
+      </section>
+
+      <!-- 予防接種 -->
+      <section id="vaccine" class="panel">
+        <h2>予防接種</h2>
+        <div class="card">
+          <form id="vaccine-form" class="vaccine-form">
+            <div class="form-group">
+              <label for="vaccine-name">ワクチン名</label>
+              <input type="text" id="vaccine-name" placeholder="例：混合ワクチン" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="vaccine-date">接種日</label>
+                <input type="date" id="vaccine-date" required>
+              </div>
+              <div class="form-group">
+                <label for="vaccine-next">次回予定</label>
+                <input type="date" id="vaccine-next">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="vaccine-notes">メモ</label>
+              <input type="text" id="vaccine-notes" placeholder="病院名など">
+            </div>
+            <button type="submit" class="btn btn-primary">追加</button>
+          </form>
+        </div>
+        <ul id="vaccine-list" class="record-list"></ul>
+      </section>
+
+      <!-- 病院記録 -->
+      <section id="vet" class="panel">
+        <h2>病院記録</h2>
+        <div class="card">
+          <form id="vet-form" class="vet-form">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="vet-date">受診日</label>
+                <input type="date" id="vet-date" placeholder="過去の受診">
+              </div>
+              <div class="form-group">
+                <label for="vet-scheduled">次回予約日</label>
+                <input type="date" id="vet-scheduled" placeholder="予約日">
+              </div>
+            </div>
+            <p class="form-hint">受診日か次回予約日のどちらかは必ず入力してください。3日前にお知らせします。</p>
+            <div class="form-group">
+              <label for="vet-clinic">病院名</label>
+              <input type="text" id="vet-clinic" placeholder="例：〇〇動物病院">
+            </div>
+            <div class="form-group">
+              <label for="vet-reason">受診理由</label>
+              <input type="text" id="vet-reason" placeholder="例：定期健診">
+            </div>
+            <div class="form-group">
+              <label for="vet-memo">メモ</label>
+              <textarea id="vet-memo" rows="3" placeholder="診断内容、処方など"></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">追加</button>
+          </form>
+        </div>
+        <ul id="vet-list" class="record-list"></ul>
+      </section>
+
+      <!-- お薬 -->
+      <section id="medicine" class="panel">
+        <h2>お薬管理</h2>
+        <div class="card">
+          <form id="medicine-form" class="medicine-form">
+            <div class="form-group">
+              <label for="medicine-name">薬の名前</label>
+              <input type="text" id="medicine-name" placeholder="例：フィラリア予防薬" required>
+            </div>
+            <div class="form-row">
+              <div class="form-group">
+                <label for="medicine-start">開始日</label>
+                <input type="date" id="medicine-start" required>
+              </div>
+              <div class="form-group">
+                <label for="medicine-end">終了日</label>
+                <input type="date" id="medicine-end">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="medicine-dosage">用法・用量</label>
+              <input type="text" id="medicine-dosage" placeholder="例：1日1回 朝食後">
+            </div>
+            <div class="form-group">
+              <label for="medicine-memo">メモ</label>
+              <input type="text" id="medicine-memo">
+            </div>
+            <button type="submit" class="btn btn-primary">追加</button>
+          </form>
+        </div>
+        <ul id="medicine-list" class="record-list"></ul>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <p>データはブラウザ内に保存されます。大切な記録は定期的にバックアップしてください。</p>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>

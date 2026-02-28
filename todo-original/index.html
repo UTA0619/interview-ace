@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>やることノート</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      min-height: 100vh;
+      font-family: "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Yu Gothic", Meiryo, sans-serif;
+      background: linear-gradient(165deg, #1a1b26 0%, #24283b 50%, #1a1b26 100%);
+      color: #c0caf5;
+      padding: 24px 16px 48px;
+      line-height: 1.5;
+    }
+    .wrap {
+      max-width: 420px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      text-align: center;
+      margin-bottom: 6px;
+      color: #7aa2f7;
+      letter-spacing: 0.05em;
+    }
+    .caption {
+      text-align: center;
+      font-size: 0.8rem;
+      color: #565f89;
+      margin-bottom: 20px;
+    }
+    .card {
+      background: #24283b;
+      border-radius: 14px;
+      padding: 18px;
+      border: 1px solid #3b4261;
+      box-shadow: 0 4px 24px rgba(0,0,0,0.3);
+    }
+    .add-row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .add-row input {
+      flex: 1;
+      padding: 10px 14px;
+      font-size: 1rem;
+      border: 1px solid #3b4261;
+      border-radius: 8px;
+      background: #1a1b26;
+      color: #c0caf5;
+      font-family: inherit;
+    }
+    .add-row input::placeholder { color: #565f89; }
+    .add-row input:focus {
+      outline: none;
+      border-color: #7aa2f7;
+      box-shadow: 0 0 0 2px rgba(122,162,247,0.25);
+    }
+    .add-row button {
+      padding: 10px 18px;
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: #1a1b26;
+      background: #7aa2f7;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-family: inherit;
+      white-space: nowrap;
+    }
+    .add-row button:hover { background: #89b4fa; }
+    .add-row button:active { transform: scale(0.98); }
+    .tabs {
+      display: flex;
+      gap: 4px;
+      margin-bottom: 12px;
+    }
+    .tabs button {
+      flex: 1;
+      padding: 8px 10px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      color: #565f89;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .tabs button:hover { color: #c0caf5; background: rgba(255,255,255,0.05); }
+    .tabs button.on { color: #7aa2f7; font-weight: 600; background: rgba(122,162,247,0.15); }
+    .list { list-style: none; }
+    .item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 10px;
+      border-radius: 8px;
+      margin-bottom: 4px;
+      transition: background 0.15s;
+    }
+    .item:hover { background: rgba(255,255,255,0.04); }
+    .item.done .text { text-decoration: line-through; color: #565f89; }
+    .item input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      accent-color: #9ece6a;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .item .text { flex: 1; font-size: 0.95rem; word-break: break-word; }
+    .item .del {
+      padding: 4px 8px;
+      font-size: 0.75rem;
+      font-family: inherit;
+      color: #565f89;
+      background: transparent;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      opacity: 0.8;
+    }
+    .item .del:hover { color: #f7768e; background: rgba(247,118,142,0.15); opacity: 1; }
+    .foot {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 14px;
+      padding-top: 14px;
+      border-top: 1px solid #3b4261;
+    }
+    .foot .num { font-size: 0.8rem; color: #565f89; }
+    .foot .clear {
+      padding: 6px 12px;
+      font-size: 0.8rem;
+      font-family: inherit;
+      color: #565f89;
+      background: transparent;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    .foot .clear:hover { color: #c0caf5; background: rgba(255,255,255,0.06); }
+    .empty {
+      text-align: center;
+      padding: 28px 16px;
+      color: #565f89;
+      font-size: 0.9rem;
+    }
+    @media (max-width: 400px) {
+      .add-row { flex-direction: column; }
+      .add-row button { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>やることノート</h1>
+    <p class="caption">タスクを書いて、チェックで進めよう</p>
+    <div class="card">
+      <form class="add-row" id="form">
+        <input type="text" id="input" placeholder="新しいやること..." maxlength="200" required>
+        <button type="submit">追加</button>
+      </form>
+      <div class="tabs" role="tablist">
+        <button type="button" class="on" data-filter="all">すべて</button>
+        <button type="button" data-filter="active">未完了</button>
+        <button type="button" data-filter="completed">完了</button>
+      </div>
+      <ul class="list" id="list"></ul>
+      <div class="foot">
+        <span class="num" id="num">0 件</span>
+        <button type="button" class="clear" id="clearBtn" style="display:none;">完了を削除</button>
+      </div>
+    </div>
+  </div>
+  <script>
+(function() {
+  var KEY = 'todo-original-v1';
+  var form = document.getElementById('form');
+  var input = document.getElementById('input');
+  var list = document.getElementById('list');
+  var num = document.getElementById('num');
+  var clearBtn = document.getElementById('clearBtn');
+  var tabs = document.querySelectorAll('.tabs button');
+
+  var items = load();
+  var filter = 'all';
+
+  function load() {
+    try {
+      var s = localStorage.getItem(KEY);
+      return s ? JSON.parse(s) : [];
+    } catch (e) { return []; }
+  }
+  function save() { localStorage.setItem(KEY, JSON.stringify(items)); }
+
+  function add(text) {
+    text = (text || '').trim();
+    if (!text) return;
+    items.push({ id: Date.now() + '-' + Math.random().toString(36).slice(2), text: text, done: false });
+    save();
+    input.value = '';
+    draw();
+  }
+  function toggle(id) {
+    var t = items.find(function(x) { return x.id === id; });
+    if (t) { t.done = !t.done; save(); draw(); }
+  }
+  function remove(id) {
+    items = items.filter(function(x) { return x.id !== id; });
+    save();
+    draw();
+  }
+  function clearDone() {
+    items = items.filter(function(x) { return !x.done; });
+    save();
+    draw();
+  }
+  function filtered() {
+    if (filter === 'active') return items.filter(function(x) { return !x.done; });
+    if (filter === 'completed') return items.filter(function(x) { return x.done; });
+    return items;
+  }
+  function draw() {
+    var f = filtered();
+    var left = items.filter(function(x) { return !x.done; }).length;
+    var doneCount = items.filter(function(x) { return x.done; }).length;
+
+    list.innerHTML = '';
+    if (f.length === 0) {
+      var li = document.createElement('li');
+      li.className = 'empty';
+      li.textContent = filter === 'all' ? 'まだタスクがありません。上で追加してみましょう。' : filter === 'active' ? '未完了はありません。' : '完了したタスクはありません。';
+      list.appendChild(li);
+    } else {
+      f.forEach(function(t) {
+        var li = document.createElement('li');
+        li.className = 'item' + (t.done ? ' done' : '');
+        var cb = document.createElement('input');
+        cb.type = 'checkbox';
+        cb.checked = t.done;
+        cb.addEventListener('change', function() { toggle(t.id); });
+        var span = document.createElement('span');
+        span.className = 'text';
+        span.textContent = t.text;
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = 'del';
+        btn.textContent = '削除';
+        btn.addEventListener('click', function() { remove(t.id); });
+        li.appendChild(cb);
+        li.appendChild(span);
+        li.appendChild(btn);
+        list.appendChild(li);
+      });
+    }
+    num.textContent = left + ' 件';
+    clearBtn.style.display = doneCount > 0 ? 'block' : 'none';
+    tabs.forEach(function(b) {
+      b.classList.toggle('on', b.getAttribute('data-filter') === filter);
+    });
+  }
+
+  form.addEventListener('submit', function(e) {
+    e.preventDefault();
+    add(input.value);
+  });
+  clearBtn.addEventListener('click', clearDone);
+  tabs.forEach(function(b) {
+    b.addEventListener('click', function() {
+      filter = b.getAttribute('data-filter');
+      draw();
+    });
+  });
+  draw();
+})();
+  </script>
+</body>
+</html>
